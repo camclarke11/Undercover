@@ -73,6 +73,7 @@ export default function RoleReveal({ onReady }) {
   };
 
   const getRoleColor = (role) => {
+    if (room?.settings?.hideRoleLabels && role !== 'Mr. White') return 'text-white';
     if (role === 'Civilian') return 'text-game-success';
     if (role === 'Undercover') return 'text-game-highlight';
     if (role === 'Mr. White') return 'text-game-warning';
@@ -80,6 +81,7 @@ export default function RoleReveal({ onReady }) {
   };
 
   const getRoleEmoji = (role) => {
+    if (room?.settings?.hideRoleLabels && role !== 'Mr. White') return '🤫';
     if (role === 'Civilian') return '👤';
     if (role === 'Undercover') return '🕵️';
     if (role === 'Mr. White') return '🎭';
@@ -87,6 +89,9 @@ export default function RoleReveal({ onReady }) {
   };
 
   const getRoleInfo = (role) => {
+    if (room?.settings?.hideRoleLabels && role !== 'Mr. White') {
+      return 'Memorize your word! You don\'t know if you are a Civilian or Undercover.';
+    }
     if (role === 'Civilian') {
       return 'Say a one-word clue about your word. Find the Undercover!';
     }
@@ -183,7 +188,9 @@ export default function RoleReveal({ onReady }) {
             <div className="text-4xl mb-2">{getRoleEmoji(currentPlayer?.role)}</div>
             <p className="text-sm text-gray-400 mb-1">Your Role</p>
             <h2 className={`text-3xl font-bold ${getRoleColor(currentPlayer?.role)}`}>
-              {currentPlayer?.role}
+              {room?.settings?.hideRoleLabels && currentPlayer?.role !== 'Mr. White' 
+                ? '???' 
+                : currentPlayer?.role}
             </h2>
           </div>
 

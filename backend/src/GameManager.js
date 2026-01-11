@@ -61,6 +61,7 @@ class GameManager {
       settings: {
         undercoverCount: 1,
         includeMrWhite: false,
+        hideRoleLabels: false,
         selectedCategories: getCategories() // All categories selected by default
       },
       speakingOrder: [],
@@ -96,6 +97,10 @@ class GameManager {
 
     if (settings.includeMrWhite !== undefined) {
       room.settings.includeMrWhite = Boolean(settings.includeMrWhite);
+    }
+
+    if (settings.hideRoleLabels !== undefined) {
+      room.settings.hideRoleLabels = Boolean(settings.hideRoleLabels);
     }
 
     if (settings.selectedCategories !== undefined) {
