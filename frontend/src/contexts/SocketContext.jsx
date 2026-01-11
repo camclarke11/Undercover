@@ -271,6 +271,24 @@ export function SocketProvider({ children }) {
     });
   }, [socket, room]);
 
+  const undoAction = useCallback(() => {
+    return new Promise((resolve, reject) => {
+      if (!socket || !room) {
+        reject(new Error('Not in a room'));
+        return;
+      }
+      socket.emit('UNDO_ACTION', { roomCode: room.code }, (response) => {
+        if (response.success) {
+          setRoom(response.room);
+          resolve(response);
+        } else {
+          setError(response.error);
+          reject(new Error(response.error));
+        }
+      });
+    });
+  }, [socket, room]);
+
   const playAgain = useCallback(() => {
     return new Promise((resolve, reject) => {
       if (!socket || !room) {
@@ -351,6 +369,7 @@ export function SocketProvider({ children }) {
     eliminatePlayer,
     skipElimination,
     mrWhiteGuess,
+    undoAction,
     playAgain,
     resetScores,
     leaveRoom,

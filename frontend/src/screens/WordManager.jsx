@@ -48,6 +48,10 @@ export default function WordManager({ onBack }) {
   const [formUnd, setFormUnd] = useState('');
   const [formCat, setFormCat] = useState('');
   const [newCategoryName, setNewCategoryName] = useState('');
+  
+  // Search & Filter
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showCustomOnly, setShowCustomOnly] = useState(false);
 
   // Fetch categories
   const fetchCategories = useCallback(async () => {
@@ -83,6 +87,18 @@ export default function WordManager({ onBack }) {
     fetchCategories();
     fetchWords();
   }, [fetchCategories, fetchWords]);
+
+  // Filter words
+  const filteredWords = words.filter(word => {
+    const matchesSearch = searchQuery.trim() === '' || 
+      word.civ.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      word.und.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      word.cat.toLowerCase().includes(searchQuery.toLowerCase());
+      
+    const matchesCustom = !showCustomOnly || !word.isDefault;
+    
+    return matchesSearch && matchesCustom;
+  });
 
   // Select category
   const handleSelectCategory = (cat) => {
@@ -333,6 +349,37 @@ export default function WordManager({ onBack }) {
 
       {/* Categories */}
       <div className="mb-4">
+        {/* Search Bar */}
+        <div className="mb-4 flex gap-2">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              placeholder="Search words..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-game-accent rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-game-highlight"
+            />
+            <svg
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <button
+            onClick={() => setShowCustomOnly(!showCustomOnly)}
+            className={`px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
+              showCustomOnly 
+                ? 'bg-game-highlight text-white' 
+                : 'bg-game-accent text-gray-400 hover:text-white'
+            }`}
+          >
+            Custom Only
+          </button>
+        </div>
+
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-sm text-gray-400 font-medium">Categories</h2>
           <span className="text-xs text-gray-500">{categories.length} categories</span>
@@ -392,17 +439,22 @@ export default function WordManager({ onBack }) {
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto pb-4">
-            {words.length === 0 ? (
+            {filteredWords.length === 0 ? (
               <div className="text-center text-gray-500 py-8">
-                No word pairs found. Add some!
+                {words.length === 0 ? 'No word pairs found. Add some!' : 'No matches found.'}
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2">
-                {words.map(word => (
+                {filteredWords.map(word => (
                   <div
                     key={word.id}
-                    className="bg-game-accent rounded-lg p-2 flex flex-col justify-between group hover:bg-opacity-80 transition-all text-sm"
+                    className={`bg-game-accent rounded-lg p-2 flex flex-col justify-between group hover:bg-opacity-80 transition-all text-sm relative ${
+                      !word.isDefault ? 'border border-game-success border-opacity-30' : ''
+                    }`}
                   >
+                    {!word.isDefault && (
+                      <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-game-success rounded-full" title="Custom Word" />
+                    )}
                     <div className="min-w-0 mb-1">
                       <div className="flex items-center justify-center gap-1 mb-0.5">
                         <span className="text-white font-medium truncate">{word.civ}</span>

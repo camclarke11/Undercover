@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSocket } from '../contexts/SocketContext';
+import { vibrate, HAPTIC } from '../utils/haptics';
 
 const WALTER_WHITE_GIFS = [
   '/gifs/walter-white-falling.gif',
@@ -48,10 +49,12 @@ export default function RoleReveal({ onReady }) {
   }, [currentPlayer?.role, revealed]);
 
   const handleReveal = () => {
+    vibrate(HAPTIC.TAP);
     setRevealed(true);
   };
 
   const handleNext = async () => {
+    vibrate(HAPTIC.TAP);
     if (!currentPlayer) return;
     
     // If already revealed (shouldn't happen but just in case), just move to next

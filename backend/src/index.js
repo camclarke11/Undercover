@@ -282,6 +282,24 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('UNDO_ACTION', ({ roomCode }, callback) => {
+    try {
+      const result = gameManager.undoLastAction(roomCode);
+      if (!result.success) {
+        callback(result);
+        return;
+      }
+      console.log(`Undo action in room ${roomCode}`);
+      callback({
+        success: true,
+        room: gameManager.getPublicRoomState(result.room)
+      });
+    } catch (error) {
+      console.error('Error undoing action:', error);
+      callback({ success: false, error: 'Failed to undo' });
+    }
+  });
+
   socket.on('MR_WHITE_GUESS', ({ roomCode, guess }, callback) => {
     try {
       const result = gameManager.mrWhiteGuess(roomCode, guess);

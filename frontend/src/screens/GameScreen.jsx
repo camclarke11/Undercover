@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSocket } from '../contexts/SocketContext';
+import { vibrate, HAPTIC } from '../utils/haptics';
 
 const WALTER_WHITE_GIFS = [
   '/gifs/walter-white-falling.gif',
@@ -13,7 +14,7 @@ const getRandomWalterWhiteGif = () => {
 };
 
 export default function GameScreen() {
-  const { room, eliminatePlayer, skipElimination, mrWhiteGuess, eliminationResult, clearEliminationResult } = useSocket();
+  const { room, eliminatePlayer, skipElimination, mrWhiteGuess, eliminationResult, clearEliminationResult, undoAction } = useSocket();
   const [guess, setGuess] = useState('');
   const [loading, setLoading] = useState(false);
   const [showResult, setShowResult] = useState(false);
@@ -44,18 +45,21 @@ export default function GameScreen() {
   }, [room?.status]);
 
   const handleEliminateClick = (player) => {
+    vibrate(HAPTIC.TAP);
     setConfirmElimination(player);
   };
 
   const handleConfirmElimination = async () => {
     if (loading || !confirmElimination) return;
 
+    vibrate(HAPTIC.HEAVY);
     setLoading(true);
     try {
       await eliminatePlayer(confirmElimination.id);
       setConfirmElimination(null);
     } catch (err) {
       console.error('Failed to eliminate:', err);
+      vibrate(HAPTIC.ERROR);
     }
     setLoading(false);
   };
@@ -76,11 +80,13 @@ export default function GameScreen() {
     e.preventDefault();
     if (!guess.trim() || loading) return;
 
+    vibrate(HAPTIC.TAP);
     setLoading(true);
     try {
       await mrWhiteGuess(guess.trim());
     } catch (err) {
       console.error('Failed to submit guess:', err);
+      vibrate(HAPTIC.ERROR);
     }
     setLoading(false);
   };
@@ -88,6 +94,19 @@ export default function GameScreen() {
   const handleContinue = () => {
     setShowResult(false);
     clearEliminationResult();
+  };
+
+  const handleUndo = async () => {
+    if (confirm('Undo last action?')) {
+      vibrate(HAPTIC.WARNING);
+      setLoading(true);
+      try {
+        await undoAction();
+      } catch (err) {
+        console.error('Failed to undo:', err);
+      }
+      setLoading(false);
+    }
   };
 
   // Confirmation Modal
@@ -238,9 +257,23 @@ export default function GameScreen() {
   return (
     <div className="min-h-screen flex flex-col p-6 safe-bottom">
       {/* Header */}
-      <div className="text-center mb-4">
-        <h2 className="text-xl font-bold mb-1">Round {room?.round}</h2>
-        <p className="text-gray-400 text-sm">{alivePlayers.length} players remaining</p>
+      <div className="flex items-center justify-between mb-4 relative">
+        <div className="flex-1" /> {/* Spacer */}
+        <div className="text-center">
+          <h2 className="text-xl font-bold mb-1">Round {room?.round}</h2>
+          <p className="text-gray-400 text-sm">{alivePlayers.length} players remaining</p>
+        </div>
+        <div className="flex-1 flex justify-end">
+          <button
+            onClick={handleUndo}
+            className="p-2 text-gray-400 hover:text-white transition-colors bg-game-accent rounded-full hover:bg-gray-700"
+            title="Undo last action"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Speaking Order */}

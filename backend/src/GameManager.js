@@ -68,10 +68,46 @@ class GameManager {
       speakingOrder: [],
       round: 0,
       mrWhiteGuesserId: null,
-      gameHistory: [] // Track game results
+      gameHistory: [], // Track game results
+      undoStack: [] // Stack of previous states for undo
     };
     this.rooms.set(roomCode, room);
     return room;
+  }
+
+  // Deep clone room state for undo stack
+  // We only need to save the mutable game state, not static settings/players (unless players change mid-game)
+  snapshotRoom(room) {
+    return {
+      status: room.status,
+      players: JSON.parse(JSON.stringify(room.players)),
+      speakingOrder: [...room.speakingOrder],
+      round: room.round,
+      mrWhiteGuesserId: room.mrWhiteGuesserId,
+      wordPair: room.wordPair // In case we undo back to pre-game or words change? (less likely but safe)
+    };
+  }
+
+  // Restore room state from snapshot
+  restoreRoom(room, snapshot) {
+    room.status = snapshot.status;
+    room.players = snapshot.players;
+    room.speakingOrder = snapshot.speakingOrder;
+    room.round = snapshot.round;
+    room.mrWhiteGuesserId = snapshot.mrWhiteGuesserId;
+    room.wordPair = snapshot.wordPair;
+  }
+
+  undoLastAction(roomCode) {
+    const room = this.rooms.get(roomCode);
+    if (!room || !room.undoStack || room.undoStack.length === 0) {
+      return { success: false, error: 'Nothing to undo' };
+    }
+
+    const snapshot = room.undoStack.pop();
+    this.restoreRoom(room, snapshot);
+    
+    return { success: true, room };
   }
 
   updateSettings(roomCode, hostSocketId, settings) {
@@ -316,6 +352,9 @@ class GameManager {
       return { success: false, error: 'Player not found or already eliminated' };
     }
 
+    // Save state before modification
+    room.undoStack.push(this.snapshotRoom(room));
+
     player.isAlive = false;
 
     // Check if Mr. White was eliminated - they get a chance to guess
@@ -377,6 +416,9 @@ class GameManager {
     if (!room || room.status !== STATUS.MR_WHITE_GUESS) {
       return { success: false, error: 'Cannot guess now' };
     }
+
+    // Save state before processing guess
+    room.undoStack.push(this.snapshotRoom(room));
 
     const mrWhite = room.players.find(p => p.id === room.mrWhiteGuesserId);
     const civilianWord = room.wordPair.civ.toLowerCase();
