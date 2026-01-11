@@ -3,7 +3,7 @@ const { createServer } = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const { GameManager, STATUS } = require('./GameManager');
-const { getCategories, getCategoryCounts, getTotalPairs } = require('./wordDatabase');
+const wordStorage = require('./wordStorage');
 const path = require('path');
 
 const app = express();
@@ -27,16 +27,103 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', rooms: gameManager.rooms.size });
 });
 
+// ============================================
+// WORD PAIR MANAGEMENT API
+// ============================================
+
 // Get available word pair categories
-app.get('/categories', (req, res) => {
-  const categories = getCategories();
-  const counts = getCategoryCounts();
-  const total = getTotalPairs();
+app.get('/api/categories', (req, res) => {
+  const categories = wordStorage.getAllCategories();
+  const total = wordStorage.getTotalPairs();
   res.json({
-    categories: categories.map(cat => ({
-      name: cat,
-      count: counts[cat] || 0
-    })),
+    categories,
+    totalPairs: total
+  });
+});
+
+// Get all word pairs (optionally filtered by category)
+app.get('/api/words', (req, res) => {
+  const { category } = req.query;
+  let pairs;
+  if (category) {
+    pairs = wordStorage.getWordPairsByCategory(category);
+  } else {
+    pairs = wordStorage.getAllWordPairs();
+  }
+  res.json({ pairs, total: pairs.length });
+});
+
+// Add a new word pair
+app.post('/api/words', (req, res) => {
+  const { civ, und, cat } = req.body;
+  if (!civ || !und || !cat) {
+    return res.status(400).json({ error: 'Missing required fields: civ, und, cat' });
+  }
+  const newPair = wordStorage.addWordPair(civ, und, cat);
+  res.json({ success: true, pair: newPair });
+});
+
+// Update a word pair
+app.put('/api/words/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const { civ, und, cat } = req.body;
+  const updated = wordStorage.updateWordPair(id, { civ, und, cat });
+  if (!updated) {
+    return res.status(404).json({ error: 'Word pair not found' });
+  }
+  res.json({ success: true, pair: updated });
+});
+
+// Delete a word pair
+app.delete('/api/words/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const deleted = wordStorage.deleteWordPair(id);
+  if (!deleted) {
+    return res.status(404).json({ error: 'Word pair not found' });
+  }
+  res.json({ success: true });
+});
+
+// Bulk add word pairs
+app.post('/api/words/bulk', (req, res) => {
+  const { pairs } = req.body;
+  if (!Array.isArray(pairs)) {
+    return res.status(400).json({ error: 'pairs must be an array' });
+  }
+  const added = wordStorage.addBulkWordPairs(pairs);
+  res.json({ success: true, added: added.length, pairs: added });
+});
+
+// Rename a category
+app.put('/api/categories/:name', (req, res) => {
+  const oldName = decodeURIComponent(req.params.name);
+  const { newName } = req.body;
+  if (!newName) {
+    return res.status(400).json({ error: 'newName is required' });
+  }
+  const count = wordStorage.renameCategory(oldName, newName);
+  res.json({ success: true, renamed: count });
+});
+
+// Delete a category and all its word pairs
+app.delete('/api/categories/:name', (req, res) => {
+  const name = decodeURIComponent(req.params.name);
+  const deleted = wordStorage.deleteCategory(name);
+  res.json({ success: true, deleted });
+});
+
+// Reset to default word pairs
+app.post('/api/words/reset', (req, res) => {
+  const count = wordStorage.resetToDefaults();
+  res.json({ success: true, count });
+});
+
+// Legacy endpoint for backwards compatibility
+app.get('/categories', (req, res) => {
+  const categories = wordStorage.getAllCategories();
+  const total = wordStorage.getTotalPairs();
+  res.json({
+    categories,
     totalPairs: total
   });
 });

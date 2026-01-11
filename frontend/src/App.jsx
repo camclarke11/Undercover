@@ -5,10 +5,12 @@ import Lobby from './screens/Lobby';
 import RoleReveal from './screens/RoleReveal';
 import GameScreen from './screens/GameScreen';
 import GameOver from './screens/GameOver';
+import WordManager from './screens/WordManager';
 
 function GameFlow() {
   const { room, gameResult } = useSocket();
   const [roleRevealComplete, setRoleRevealComplete] = useState(false);
+  const [showWordManager, setShowWordManager] = useState(false);
 
   // Reset role reveal state when game ends or room resets
   useEffect(() => {
@@ -31,9 +33,14 @@ function GameFlow() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [room]);
 
+  // Show Word Manager screen
+  if (showWordManager) {
+    return <WordManager onBack={() => setShowWordManager(false)} />;
+  }
+
   // No room - show landing
   if (!room) {
-    return <Landing />;
+    return <Landing onOpenWordManager={() => setShowWordManager(true)} />;
   }
 
   // Waiting for players - show lobby

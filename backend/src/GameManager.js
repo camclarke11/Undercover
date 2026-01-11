@@ -1,4 +1,4 @@
-const { getRandomWordPair, getCategories, getCategoryCounts } = require('./wordDatabase');
+const wordStorage = require('./wordStorage');
 
 // Game status constants
 const STATUS = {
@@ -63,7 +63,7 @@ class GameManager {
         includeMrWhite: false,
         hideRoleLabels: false,
         preventMrWhiteFirst: false, // New setting
-        selectedCategories: getCategories() // All categories selected by default
+        selectedCategories: wordStorage.getAllCategories().map(c => c.name) // All categories selected by default
       },
       speakingOrder: [],
       round: 0,
@@ -110,7 +110,7 @@ class GameManager {
 
     if (settings.selectedCategories !== undefined) {
       // Validate that selectedCategories is an array of valid categories
-      const validCategories = getCategories();
+      const validCategories = wordStorage.getAllCategories().map(c => c.name);
       const filtered = settings.selectedCategories.filter(cat => validCategories.includes(cat));
       room.settings.selectedCategories = filtered.length > 0 ? filtered : validCategories;
     }
@@ -446,12 +446,8 @@ class GameManager {
   }
 
   getWordPairFromCategories(selectedCategories) {
-    // Pick a random category from selected ones, then get a word pair from it
-    if (!selectedCategories || selectedCategories.length === 0) {
-      return getRandomWordPair();
-    }
-    const randomCategory = selectedCategories[Math.floor(Math.random() * selectedCategories.length)];
-    return getRandomWordPair(randomCategory);
+    // Get a random word pair from the selected categories
+    return wordStorage.getRandomWordPair(selectedCategories);
   }
 
   checkWinCondition(room) {
