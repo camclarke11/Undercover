@@ -19,21 +19,29 @@ export function SocketProvider({ children }) {
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
 
-  // Fetch available categories on mount
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await fetch(`${BACKEND_URL}/categories`);
-        const data = await response.json();
-        setCategories(data.categories || []);
-      } catch (err) {
-        console.error('Failed to fetch categories:', err);
-      } finally {
-        setCategoriesLoading(false);
-      }
-    };
-    fetchCategories();
+  // Fetch available categories
+  const fetchCategories = useCallback(async () => {
+    try {
+      setCategoriesLoading(true);
+      const response = await fetch(`${BACKEND_URL}/api/categories`);
+      const data = await response.json();
+      setCategories(data.categories || []);
+    } catch (err) {
+      console.error('Failed to fetch categories:', err);
+    } finally {
+      setCategoriesLoading(false);
+    }
   }, []);
+
+  // Fetch categories on mount
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  // Function to refresh categories (call after Word Manager changes)
+  const refreshCategories = useCallback(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   useEffect(() => {
     const newSocket = io(BACKEND_URL, {
@@ -347,7 +355,8 @@ export function SocketProvider({ children }) {
     resetScores,
     leaveRoom,
     clearError,
-    clearEliminationResult
+    clearEliminationResult,
+    refreshCategories
   };
 
   return (

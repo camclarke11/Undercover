@@ -8,7 +8,7 @@ import GameOver from './screens/GameOver';
 import WordManager from './screens/WordManager';
 
 function GameFlow() {
-  const { room, gameResult } = useSocket();
+  const { room, gameResult, refreshCategories } = useSocket();
   const [roleRevealComplete, setRoleRevealComplete] = useState(false);
   const [showWordManager, setShowWordManager] = useState(false);
 
@@ -33,9 +33,15 @@ function GameFlow() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [room]);
 
+  // Handle closing Word Manager - refresh categories so Lobby sees updates
+  const handleCloseWordManager = () => {
+    setShowWordManager(false);
+    refreshCategories();
+  };
+
   // Show Word Manager screen
   if (showWordManager) {
-    return <WordManager onBack={() => setShowWordManager(false)} />;
+    return <WordManager onBack={handleCloseWordManager} />;
   }
 
   // No room - show landing

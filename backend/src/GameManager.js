@@ -110,9 +110,10 @@ class GameManager {
 
     if (settings.selectedCategories !== undefined) {
       // Validate that selectedCategories is an array of valid categories
+      // Allow empty array - game start will validate that at least one is selected
       const validCategories = wordStorage.getAllCategories().map(c => c.name);
       const filtered = settings.selectedCategories.filter(cat => validCategories.includes(cat));
-      room.settings.selectedCategories = filtered.length > 0 ? filtered : validCategories;
+      room.settings.selectedCategories = filtered;
     }
 
     return { success: true, room };
@@ -226,6 +227,14 @@ class GameManager {
       return { 
         success: false, 
         error: `Too many special roles for ${playerCount} players.` 
+      };
+    }
+
+    // Check that at least one category is selected
+    if (!room.settings.selectedCategories || room.settings.selectedCategories.length === 0) {
+      return {
+        success: false,
+        error: 'Select at least one word category'
       };
     }
 

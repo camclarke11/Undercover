@@ -61,9 +61,6 @@ export default function Lobby() {
       ? selectedCategories.filter(c => c !== categoryName)
       : [...selectedCategories, categoryName];
     
-    // Don't allow deselecting all categories
-    if (newCategories.length === 0) return;
-    
     try {
       await updateSettings({ selectedCategories: newCategories });
     } catch (err) {
@@ -80,9 +77,8 @@ export default function Lobby() {
   };
 
   const handleClearCategories = async () => {
-    // Keep at least one category selected (first one)
     try {
-      await updateSettings({ selectedCategories: [allCategoryNames[0]] });
+      await updateSettings({ selectedCategories: [] });
     } catch (err) {
       console.error('Failed to update categories:', err);
     }
@@ -107,7 +103,8 @@ export default function Lobby() {
   const undercoverCount = settings.undercoverCount;
   const mrWhiteCount = settings.includeMrWhite ? 1 : 0;
   const civilianCount = Math.max(0, playerCount - undercoverCount - mrWhiteCount);
-  const isValidConfig = playerCount >= 3 && civilianCount >= 2;
+  const hasCategories = selectedCategories.length > 0;
+  const isValidConfig = playerCount >= 3 && civilianCount >= 2 && hasCategories;
 
   return (
     <div className="min-h-screen flex flex-col p-6 safe-bottom">
@@ -302,10 +299,12 @@ export default function Lobby() {
         >
           <div>
             <h2 className="font-semibold text-left">Word Categories</h2>
-            <p className="text-xs text-gray-400">
-              {selectedCategories.length === allCategoryNames.length 
-                ? 'All categories selected' 
-                : `${selectedCategories.length} of ${allCategoryNames.length} selected`}
+            <p className={`text-xs ${selectedCategories.length === 0 ? 'text-game-highlight' : 'text-gray-400'}`}>
+              {selectedCategories.length === 0
+                ? '⚠️ No categories selected!'
+                : selectedCategories.length === allCategoryNames.length 
+                  ? 'All categories selected' 
+                  : `${selectedCategories.length} of ${allCategoryNames.length} selected`}
             </p>
           </div>
           <svg 
@@ -331,10 +330,10 @@ export default function Lobby() {
               </button>
               <button
                 onClick={handleClearCategories}
-                disabled={selectedCategories.length <= 1}
+                disabled={selectedCategories.length === 0}
                 className="flex-1 py-2 px-3 text-sm font-medium rounded-lg bg-game-highlight bg-opacity-20 text-game-highlight hover:bg-opacity-30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                ✕ Clear
+                ✕ Clear All
               </button>
             </div>
 
@@ -349,12 +348,11 @@ export default function Lobby() {
                     <button
                       key={category.name}
                       onClick={() => handleToggleCategory(category.name)}
-                      disabled={isSelected && selectedCategories.length === 1}
                       className={`p-3 rounded-xl text-left transition-all ${
                         isSelected 
                           ? 'bg-game-success bg-opacity-20 border-2 border-game-success' 
                           : 'bg-game-accent border-2 border-transparent hover:border-gray-600'
-                      } ${isSelected && selectedCategories.length === 1 ? 'cursor-not-allowed' : ''}`}
+                      }`}
                     >
                       <div className="flex items-start gap-2">
                         <div className={`w-5 h-5 rounded flex-shrink-0 flex items-center justify-center mt-0.5 ${
@@ -383,9 +381,15 @@ export default function Lobby() {
 
             {/* Selected count summary */}
             <div className="mt-3 pt-3 border-t border-gray-700 text-center">
-              <p className="text-xs text-gray-400">
-                📝 {categories.filter(c => selectedCategories.includes(c.name)).reduce((sum, c) => sum + c.count, 0)} word pairs available
-              </p>
+              {selectedCategories.length === 0 ? (
+                <p className="text-xs text-game-highlight">
+                  ⚠️ Select at least one category to start
+                </p>
+              ) : (
+                <p className="text-xs text-gray-400">
+                  📝 {categories.filter(c => selectedCategories.includes(c.name)).reduce((sum, c) => sum + c.count, 0)} word pairs available
+                </p>
+              )}
             </div>
           </div>
         )}
