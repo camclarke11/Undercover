@@ -36,6 +36,7 @@ export default function Landing() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6">
         <div className="text-center mb-8">
+          <img src="/undercoverlogo.png" alt="Undercover Logo" className="w-24 h-24 mx-auto mb-4 rounded-2xl shadow-lg" />
           <h1 className="text-5xl font-bold mb-2 bg-gradient-to-r from-game-success to-game-highlight bg-clip-text text-transparent">
             Undercover
           </h1>
