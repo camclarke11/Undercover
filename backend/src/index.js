@@ -4,6 +4,7 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const { GameManager, STATUS } = require('./GameManager');
 const { getCategories, getCategoryCounts, getTotalPairs } = require('./wordDatabase');
+const path = require('path');
 
 const app = express();
 const httpServer = createServer(app);
@@ -18,6 +19,9 @@ const gameManager = new GameManager();
 
 app.use(cors());
 app.use(express.json());
+
+// Serve static files from the frontend build directory
+app.use(express.static(path.join(__dirname, '../public')));
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', rooms: gameManager.rooms.size });
@@ -257,6 +261,11 @@ io.on('connection', (socket) => {
       console.log(`Room ${result.roomCode} deleted`);
     }
   });
+});
+
+// Handle React routing, return all requests to React app
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public', 'index.html'));
 });
 
 const PORT = process.env.PORT || 3001;

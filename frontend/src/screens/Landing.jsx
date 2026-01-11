@@ -33,12 +33,12 @@ export default function Landing() {
     );
   }
 
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6">
-      <div className="text-center mb-8">
-        <h1 className="text-5xl font-bold mb-2 bg-gradient-to-r from-game-success to-game-highlight bg-clip-text text-transparent">
-          Undercover
-        </h1>
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6">
+        <div className="text-center mb-8">
+          <h1 className="text-5xl font-bold mb-2 bg-gradient-to-r from-game-success to-game-highlight bg-clip-text text-transparent">
+            Undercover
+          </h1>
         <p className="text-gray-400">The party game of hidden identities!</p>
       </div>
 
@@ -46,15 +46,15 @@ export default function Landing() {
         <form onSubmit={handleStart} className="space-y-4">
           <div>
             <label className="block text-sm text-gray-400 mb-2">Your Name (Game Host)</label>
-            <input
-              type="text"
+          <input
+            type="text"
               placeholder="Enter your name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="input-field"
-              maxLength={20}
-              autoComplete="off"
-            />
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="input-field"
+            maxLength={20}
+            autoComplete="off"
+          />
           </div>
 
           {error && (

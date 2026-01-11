@@ -3,7 +3,8 @@ import { io } from 'socket.io-client';
 
 const SocketContext = createContext(null);
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+// If VITE_BACKEND_URL is set (dev), use it. Otherwise (prod), use relative path which implies same host/port.
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '';
 
 export function SocketProvider({ children }) {
   const [socket, setSocket] = useState(null);
