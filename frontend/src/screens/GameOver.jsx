@@ -170,25 +170,37 @@ export default function GameOver() {
               {scoreResults.map((result) => (
                 <div
                   key={result.id}
-                  className="flex items-center justify-between py-2 px-3 bg-game-accent rounded-lg"
+                  className="flex flex-col py-2 px-3 bg-game-accent rounded-lg"
                 >
-                  <div className="flex items-center gap-2">
-                    <span className={`text-sm font-medium ${
-                      result.role === 'Civilian' ? 'text-game-success' :
-                      result.role === 'Undercover' ? 'text-game-highlight' :
-                      'text-game-warning'
-                    }`}>
-                      {result.role === 'Civilian' ? '👤' : result.role === 'Undercover' ? '🕵️' : '🎭'}
-                    </span>
-                    <span className="text-white text-sm">{result.name}</span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-sm font-medium ${
+                        result.role === 'Civilian' ? 'text-game-success' :
+                        result.role === 'Undercover' ? 'text-game-highlight' :
+                        'text-game-warning'
+                      }`}>
+                        {result.role === 'Civilian' ? '👤' : result.role === 'Undercover' ? '🕵️' : '🎭'}
+                      </span>
+                      <span className="text-white text-sm">{result.name}</span>
+                    </div>
+                    <div className="text-right">
+                      {result.pointsThisGame > 0 ? (
+                        <span className="text-game-success font-bold">+{result.pointsThisGame}</span>
+                      ) : (
+                        <span className="text-gray-500">+0</span>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-right">
-                    {result.pointsThisGame > 0 ? (
-                      <span className="text-game-success font-bold">+{result.pointsThisGame}</span>
-                    ) : (
-                      <span className="text-gray-500">+0</span>
-                    )}
-                  </div>
+                  {/* Score Breakdown */}
+                  {result.breakdown && result.breakdown.length > 0 && (
+                    <div className="mt-1 pl-7 text-xs text-gray-400 flex flex-wrap gap-x-2">
+                      {result.breakdown.map((item, idx) => (
+                        <span key={idx} className="whitespace-nowrap">
+                          {item}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

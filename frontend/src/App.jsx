@@ -17,6 +17,20 @@ function GameFlow() {
     }
   }, [room?.status]);
 
+  // Prevent accidental back/refresh during game
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (room && room.status !== 'WAITING' && room.status !== 'FINISHED') {
+        e.preventDefault();
+        e.returnValue = ''; // Required for Chrome
+        return ''; // Required for some other browsers
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [room]);
+
   // No room - show landing
   if (!room) {
     return <Landing />;
