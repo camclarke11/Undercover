@@ -188,6 +188,64 @@ export default function WordManager({ onBack }) {
     }
   };
 
+  // Handle JSON file upload
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const json = JSON.parse(event.target.result);
+        
+        // Normalize format: accept array of objects or object with 'pairs'/'words' array
+        let pairs = [];
+        if (Array.isArray(json)) {
+          pairs = json;
+        } else if (json.pairs && Array.isArray(json.pairs)) {
+          pairs = json.pairs;
+        } else if (json.words && Array.isArray(json.words)) {
+          pairs = json.words;
+        } else if (json.wordPairs && Array.isArray(json.wordPairs)) {
+          pairs = json.wordPairs;
+        }
+
+        if (pairs.length === 0) {
+          setError('No valid word pairs found in JSON');
+          return;
+        }
+
+        // Validate basic structure
+        const validPairs = pairs.filter(p => p.civ && p.und && p.cat);
+        if (validPairs.length === 0) {
+          setError('JSON must contain objects with "civ", "und", and "cat" fields');
+          return;
+        }
+
+        const res = await fetch(`${BACKEND_URL}/api/words/bulk`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pairs: validPairs })
+        });
+
+        if (res.ok) {
+          const result = await res.json();
+          alert(`Successfully imported ${result.added} word pairs!`);
+          fetchCategories();
+          fetchWords(selectedCategory);
+        } else {
+          setError('Failed to import words');
+        }
+      } catch (err) {
+        console.error('JSON import error:', err);
+        setError('Invalid JSON file');
+      }
+      // Reset input
+      e.target.value = '';
+    };
+    reader.readAsText(file);
+  };
+
   // Open edit modal
   const openEditModal = (word) => {
     setFormCiv(word.civ);
@@ -216,12 +274,23 @@ export default function WordManager({ onBack }) {
           <span>Back</span>
         </button>
         <h1 className="text-xl font-bold text-white">⚙️ Word Manager</h1>
-        <button
-          onClick={() => setShowResetConfirm(true)}
-          className="text-sm text-game-highlight hover:underline"
-        >
-          Reset
-        </button>
+        <div className="flex gap-3">
+          <label className="text-sm text-game-success hover:underline cursor-pointer flex items-center">
+            Upload JSON
+            <input
+              type="file"
+              accept=".json"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+          </label>
+          <button
+            onClick={() => setShowResetConfirm(true)}
+            className="text-sm text-game-highlight hover:underline"
+          >
+            Reset
+          </button>
+        </div>
       </div>
 
       {error && (

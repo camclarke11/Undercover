@@ -24,3 +24,6 @@ Thumbs.db
 
 # Docker
 *.tar
+
+# Custom word pairs (user additions, separate from defaults)
+backend/src/customWords.json
