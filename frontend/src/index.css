@@ -92,3 +92,137 @@ body {
 .pulse-border {
   animation: pulse-border 2s infinite;
 }
+
+/* ============================================
+   LANDING PAGE EFFECTS
+   ============================================ */
+
+/* Floating particles */
+@keyframes float-up {
+  0% {
+    transform: translateY(100vh) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.particle {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  animation: float-up linear infinite;
+}
+
+/* Logo glow effect */
+@keyframes logo-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 8px rgba(233, 69, 96, 0.6)) drop-shadow(0 0 20px rgba(233, 69, 96, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 15px rgba(0, 217, 255, 0.7)) drop-shadow(0 0 30px rgba(0, 217, 255, 0.4));
+  }
+}
+
+.logo-glow {
+  animation: logo-glow 4s ease-in-out infinite;
+}
+
+/* Floating animation for logo */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.float-animation {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Radar sweep effect */
+@keyframes radar-sweep {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.radar-container {
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  opacity: 0.1;
+  pointer-events: none;
+}
+
+.radar-sweep {
+  position: absolute;
+  inset: 0;
+  background: conic-gradient(from 0deg, transparent 0deg, #00d9ff 30deg, transparent 60deg);
+  border-radius: 50%;
+  animation: radar-sweep 4s linear infinite;
+}
+
+.radar-ring {
+  position: absolute;
+  border: 1px solid #00d9ff;
+  border-radius: 50%;
+}
+
+/* Shimmer effect for text */
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.shimmer-text {
+  background: linear-gradient(
+    90deg,
+    #10b981 0%,
+    #00d9ff 25%,
+    #e94560 50%,
+    #00d9ff 75%,
+    #10b981 100%
+  );
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 4s linear infinite;
+}
+
+/* Pulse rings around logo */
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.pulse-ring {
+  position: absolute;
+  border: 2px solid rgba(233, 69, 96, 0.5);
+  border-radius: 1rem;
+  animation: pulse-ring 2s ease-out infinite;
+}
