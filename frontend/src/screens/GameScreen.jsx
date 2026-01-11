@@ -1,11 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useSocket } from '../contexts/SocketContext';
 
+const WALTER_WHITE_GIFS = [
+  '/gifs/walter-white-falling.gif',
+  '/gifs/1f539e20aa620e406a8fe33e841f5c58.gif',
+  '/gifs/200.gif',
+  '/gifs/c8642c5477e953768a6115e338823fac.gif'
+];
+
+const getRandomWalterWhiteGif = () => {
+  return WALTER_WHITE_GIFS[Math.floor(Math.random() * WALTER_WHITE_GIFS.length)];
+};
+
 export default function GameScreen() {
   const { room, eliminatePlayer, skipElimination, mrWhiteGuess, eliminationResult, clearEliminationResult } = useSocket();
   const [guess, setGuess] = useState('');
   const [loading, setLoading] = useState(false);
   const [showResult, setShowResult] = useState(false);
+  const [confirmElimination, setConfirmElimination] = useState(null); // Stores player object to confirm
+  const [walterGif, setWalterGif] = useState(getRandomWalterWhiteGif());
 
   const alivePlayers = room?.players?.filter(p => p.isAlive) || [];
   const speakingOrder = room?.speakingOrder || [];
@@ -16,15 +29,31 @@ export default function GameScreen() {
   useEffect(() => {
     if (eliminationResult) {
       setShowResult(true);
+      // Get a new random GIF when Mr. White is eliminated
+      if (eliminationResult.mrWhiteChance) {
+        setWalterGif(getRandomWalterWhiteGif());
+      }
     }
   }, [eliminationResult]);
 
-  const handleEliminate = async (playerId) => {
-    if (loading) return;
+  // Update GIF when entering Mr. White guess phase
+  useEffect(() => {
+    if (room?.status === 'MR_WHITE_GUESS') {
+      setWalterGif(getRandomWalterWhiteGif());
+    }
+  }, [room?.status]);
+
+  const handleEliminateClick = (player) => {
+    setConfirmElimination(player);
+  };
+
+  const handleConfirmElimination = async () => {
+    if (loading || !confirmElimination) return;
 
     setLoading(true);
     try {
-      await eliminatePlayer(playerId);
+      await eliminatePlayer(confirmElimination.id);
+      setConfirmElimination(null);
     } catch (err) {
       console.error('Failed to eliminate:', err);
     }
@@ -61,6 +90,40 @@ export default function GameScreen() {
     clearEliminationResult();
   };
 
+  // Confirmation Modal
+  if (confirmElimination) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-black bg-opacity-90 absolute inset-0 z-50">
+        <div className="card text-center w-full max-w-sm animate-fade-in border-2 border-game-warning">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-game-warning bg-opacity-20 flex items-center justify-center">
+            <span className="text-3xl">⚠️</span>
+          </div>
+          <h2 className="text-xl font-bold mb-2">Eliminate {confirmElimination.name}?</h2>
+          <p className="text-gray-400 mb-6">
+            Are you sure? This cannot be undone.
+          </p>
+          
+          <div className="flex gap-3">
+            <button
+              onClick={() => setConfirmElimination(null)}
+              className="btn-secondary flex-1"
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirmElimination}
+              className="btn-primary flex-1 bg-red-600 hover:bg-red-700 border-none"
+              disabled={loading}
+            >
+              {loading ? 'Eliminating...' : 'Yes, Eliminate'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Elimination Result Modal
   if (showResult && eliminationResult) {
     return (
@@ -76,6 +139,14 @@ export default function GameScreen() {
             </>
           ) : eliminationResult.mrWhiteChance ? (
             <>
+              <div className="mb-4 flex justify-center">
+                <img 
+                  src={walterGif} 
+                  alt="Walter White" 
+                  className="max-w-full h-auto rounded-lg"
+                  style={{ maxHeight: '150px' }}
+                />
+              </div>
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-game-warning bg-opacity-20 flex items-center justify-center">
                 <span className="text-3xl">🎭</span>
               </div>
@@ -116,6 +187,15 @@ export default function GameScreen() {
     return (
       <div className="min-h-screen flex flex-col p-6 safe-bottom">
         <div className="card text-center mb-6">
+          {/* Show Walter White GIF */}
+          <div className="mb-4 flex justify-center">
+            <img 
+              src={walterGif} 
+              alt="Walter White" 
+              className="max-w-full h-auto rounded-lg"
+              style={{ maxHeight: '200px' }}
+            />
+          </div>
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-game-warning bg-opacity-20 flex items-center justify-center">
             <span className="text-3xl">🎭</span>
           </div>
@@ -191,7 +271,7 @@ export default function GameScreen() {
           {alivePlayers.map((player) => (
             <button
               key={player.id}
-              onClick={() => handleEliminate(player.id)}
+              onClick={() => handleEliminateClick(player)}
               disabled={loading}
               className="flex flex-col items-center gap-2 p-3 bg-game-accent rounded-xl border border-transparent hover:border-game-highlight transition-all"
             >

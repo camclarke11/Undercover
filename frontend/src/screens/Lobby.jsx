@@ -239,6 +239,34 @@ export default function Lobby() {
           </button>
         </div>
 
+        {/* Prevent Mr. White First Toggle (only if Mr. White is enabled) */}
+        {settings.includeMrWhite && (
+          <div className="flex items-center justify-between mt-4 pl-4 border-l-2 border-gray-700">
+            <div>
+              <p className="font-medium text-white">Fair Start</p>
+              <p className="text-xs text-gray-400">Mr. White won't go first</p>
+            </div>
+            <button
+              onClick={async () => {
+                try {
+                  await updateSettings({ preventMrWhiteFirst: !settings.preventMrWhiteFirst });
+                } catch (err) {
+                  console.error('Failed to update settings:', err);
+                }
+              }}
+              className={`w-14 h-8 rounded-full transition-colors relative ${
+                settings.preventMrWhiteFirst ? 'bg-game-success' : 'bg-game-accent'
+              }`}
+            >
+              <div
+                className={`absolute top-1 w-6 h-6 rounded-full bg-white transition-all ${
+                  settings.preventMrWhiteFirst ? 'left-7' : 'left-1'
+                }`}
+              />
+            </button>
+          </div>
+        )}
+
         {/* Hide Roles Toggle */}
         <div className="flex items-center justify-between mt-4">
           <div>

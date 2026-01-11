@@ -1,11 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useSocket } from '../contexts/SocketContext';
 
+const WALTER_WHITE_GIFS = [
+  '/gifs/walter-white-falling.gif',
+  '/gifs/1f539e20aa620e406a8fe33e841f5c58.gif',
+  '/gifs/200.gif',
+  '/gifs/c8642c5477e953768a6115e338823fac.gif'
+];
+
+const getRandomWalterWhiteGif = () => {
+  return WALTER_WHITE_GIFS[Math.floor(Math.random() * WALTER_WHITE_GIFS.length)];
+};
+
 export default function RoleReveal({ onReady }) {
   const { room, revealRole } = useSocket();
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [walterGif, setWalterGif] = useState(getRandomWalterWhiteGif());
 
   const players = room?.players || [];
   const currentPlayer = players[currentPlayerIndex];
@@ -23,8 +35,17 @@ export default function RoleReveal({ onReady }) {
     if (currentPlayer?.hasRevealed && currentPlayerIndex < players.length - 1) {
       setCurrentPlayerIndex(currentPlayerIndex + 1);
       setRevealed(false);
+      // Get a new random GIF for the next player if they're Mr. White
+      setWalterGif(getRandomWalterWhiteGif());
     }
   }, [currentPlayerIndex, currentPlayer?.hasRevealed, players.length]);
+
+  // Update GIF when revealing a new player's role
+  useEffect(() => {
+    if (currentPlayer?.role === 'Mr. White' && revealed) {
+      setWalterGif(getRandomWalterWhiteGif());
+    }
+  }, [currentPlayer?.role, revealed]);
 
   const handleReveal = () => {
     setRevealed(true);
@@ -183,6 +204,18 @@ export default function RoleReveal({ onReady }) {
       ) : (
         <div className="text-center animate-fade-in w-full max-w-sm">
           <div className="text-sm text-gray-400 mb-4">{currentPlayer?.name}'s Secret</div>
+          
+          {/* Show Walter White GIF if role is Mr. White */}
+          {currentPlayer?.role === 'Mr. White' && (
+            <div className="mb-4 flex justify-center">
+              <img 
+                src={walterGif} 
+                alt="Walter White" 
+                className="max-w-full h-auto rounded-lg"
+                style={{ maxHeight: '200px' }}
+              />
+            </div>
+          )}
           
           <div className="card mb-4">
             <div className="text-4xl mb-2">{getRoleEmoji(currentPlayer?.role)}</div>

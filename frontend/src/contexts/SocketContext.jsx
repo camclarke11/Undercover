@@ -3,8 +3,10 @@ import { io } from 'socket.io-client';
 
 const SocketContext = createContext(null);
 
-// If VITE_BACKEND_URL is set (dev), use it. Otherwise (prod), use relative path which implies same host/port.
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '';
+// If VITE_BACKEND_URL is set, use it.
+// If in Development mode and no URL set, default to localhost:3001.
+// If in Production (Docker), default to '' (relative path, same host).
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || (import.meta.env.DEV ? 'http://localhost:3001' : '');
 
 export function SocketProvider({ children }) {
   const [socket, setSocket] = useState(null);
@@ -188,6 +190,7 @@ export function SocketProvider({ children }) {
               eliminated: response.eliminated,
               winners: response.winners,
               winReason: response.winReason,
+              wordPair: response.room?.wordPair,
               scoreResults: response.scoreResults,
               leaderboard: response.leaderboard
             });
@@ -289,6 +292,13 @@ export function SocketProvider({ children }) {
       socket.emit('RESET_SCORES', { roomCode: room.code }, (response) => {
         if (response.success) {
           setRoom(response.room);
+          // Also update gameResult if it exists so the leaderboard view updates immediately
+          if (gameResult) {
+            setGameResult(prev => ({
+              ...prev,
+              leaderboard: response.room.leaderboard
+            }));
+          }
           resolve(response);
         } else {
           setError(response.error);
@@ -296,7 +306,7 @@ export function SocketProvider({ children }) {
         }
       });
     });
-  }, [socket, room]);
+  }, [socket, room, gameResult]);
 
   const leaveRoom = useCallback(() => {
     setRoom(null);

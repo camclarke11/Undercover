@@ -62,6 +62,7 @@ class GameManager {
         undercoverCount: 1,
         includeMrWhite: false,
         hideRoleLabels: false,
+        preventMrWhiteFirst: false, // New setting
         selectedCategories: getCategories() // All categories selected by default
       },
       speakingOrder: [],
@@ -101,6 +102,10 @@ class GameManager {
 
     if (settings.hideRoleLabels !== undefined) {
       room.settings.hideRoleLabels = Boolean(settings.hideRoleLabels);
+    }
+
+    if (settings.preventMrWhiteFirst !== undefined) {
+      room.settings.preventMrWhiteFirst = Boolean(settings.preventMrWhiteFirst);
     }
 
     if (settings.selectedCategories !== undefined) {
@@ -241,6 +246,18 @@ class GameManager {
 
     // Randomize initial order
     this.shuffleArray(room.players);
+
+    // If setting enabled, ensure Mr. White isn't first
+    if (room.settings.preventMrWhiteFirst && room.settings.includeMrWhite && room.players.length > 1) {
+      // Keep shuffling until first player is NOT Mr. White
+      // (Safety break after 10 tries just in case everyone is Mr. White somehow)
+      let attempts = 0;
+      while (room.players[0].role === ROLE.MR_WHITE && attempts < 10) {
+        this.shuffleArray(room.players);
+        attempts++;
+      }
+    }
+
     room.status = STATUS.ROLE_REVEAL;
     room.round = 1;
     
