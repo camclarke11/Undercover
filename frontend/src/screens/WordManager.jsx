@@ -2,6 +2,30 @@ import React, { useState, useEffect, useCallback } from 'react';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || (import.meta.env.DEV ? 'http://localhost:3001' : '');
 
+// LLM prompt for converting word lists
+const LLM_CONVERSION_PROMPT = `Convert my word list into JSON format for the Undercover party game.
+
+REQUIRED FORMAT:
+Each word pair needs these 3 fields:
+- "civ": First word (string)
+- "und": Second word (string)  
+- "cat": Category name (string)
+
+OUTPUT AS JSON ARRAY:
+[
+  { "civ": "Apple", "und": "Pear", "cat": "Food & Drink" },
+  { "civ": "Dog", "und": "Wolf", "cat": "Animals" }
+]
+
+RULES:
+1. Each pair should have two similar but distinct words
+2. Group related pairs into categories
+3. Use clear, descriptive category names
+4. Output ONLY the JSON array, no other text
+
+MY WORD LIST TO CONVERT:
+`;
+
 export default function WordManager({ onBack }) {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -16,6 +40,8 @@ export default function WordManager({ onBack }) {
   const [showRenameCategory, setShowRenameCategory] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showFormatHelp, setShowFormatHelp] = useState(false);
+  const [copiedPrompt, setCopiedPrompt] = useState(false);
   
   // Form states
   const [formCiv, setFormCiv] = useState('');
@@ -275,6 +301,12 @@ export default function WordManager({ onBack }) {
         </button>
         <h1 className="text-xl font-bold text-white">⚙️ Word Manager</h1>
         <div className="flex gap-3">
+          <button
+            onClick={() => setShowFormatHelp(true)}
+            className="text-sm text-blue-400 hover:underline"
+          >
+            Format Help
+          </button>
           <label className="text-sm text-game-success hover:underline cursor-pointer flex items-center">
             Upload JSON
             <input
@@ -621,6 +653,88 @@ export default function WordManager({ onBack }) {
                 Reset All
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Format Help Modal */}
+      {showFormatHelp && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="card w-full max-w-2xl my-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold">📋 JSON Format Help</h2>
+              <button
+                onClick={() => { setShowFormatHelp(false); setCopiedPrompt(false); }}
+                className="text-gray-400 hover:text-white text-2xl"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Expected Format */}
+            <div className="mb-6">
+              <h3 className="font-semibold text-game-success mb-2">Expected JSON Format</h3>
+              <div className="bg-black bg-opacity-50 rounded-lg p-3 text-sm font-mono overflow-x-auto">
+                <pre className="text-gray-300">{`[
+  { "civ": "Apple", "und": "Pear", "cat": "Food & Drink" },
+  { "civ": "Dog", "und": "Wolf", "cat": "Animals" },
+  { "civ": "Piano", "und": "Keyboard", "cat": "Music" }
+]`}</pre>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Each object needs: <code className="text-game-success">civ</code> (word 1), 
+                <code className="text-game-highlight ml-1">und</code> (word 2), 
+                <code className="text-blue-400 ml-1">cat</code> (category)
+              </p>
+            </div>
+
+            {/* Alternative Formats */}
+            <div className="mb-6">
+              <h3 className="font-semibold text-gray-300 mb-2">Also Accepted</h3>
+              <div className="bg-black bg-opacity-30 rounded-lg p-3 text-xs font-mono text-gray-400">
+                <p>• Object with "pairs" array: <code>{`{ "pairs": [...] }`}</code></p>
+                <p>• Object with "words" array: <code>{`{ "words": [...] }`}</code></p>
+                <p>• Object with "wordPairs" array: <code>{`{ "wordPairs": [...] }`}</code></p>
+              </div>
+            </div>
+
+            {/* LLM Conversion Section */}
+            <div className="border-t border-gray-700 pt-4">
+              <h3 className="font-semibold text-game-warning mb-2">🤖 Have a different format? Use AI to convert!</h3>
+              <p className="text-sm text-gray-400 mb-3">
+                Copy this prompt and paste it into ChatGPT, Claude, or any AI assistant. Then paste your word list after it.
+              </p>
+              
+              <div className="bg-game-accent rounded-lg p-3 text-sm mb-3 max-h-40 overflow-y-auto">
+                <pre className="text-gray-300 whitespace-pre-wrap text-xs">{LLM_CONVERSION_PROMPT}</pre>
+              </div>
+
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(LLM_CONVERSION_PROMPT);
+                  setCopiedPrompt(true);
+                  setTimeout(() => setCopiedPrompt(false), 2000);
+                }}
+                className={`w-full py-2 px-4 rounded-lg font-medium transition-all ${
+                  copiedPrompt 
+                    ? 'bg-game-success text-black' 
+                    : 'bg-game-warning bg-opacity-20 text-game-warning hover:bg-opacity-30'
+                }`}
+              >
+                {copiedPrompt ? '✓ Copied to Clipboard!' : '📋 Copy Prompt to Clipboard'}
+              </button>
+
+              <p className="text-xs text-gray-500 mt-3 text-center">
+                After the AI generates the JSON, save it as a .json file and upload it here.
+              </p>
+            </div>
+
+            <button
+              onClick={() => { setShowFormatHelp(false); setCopiedPrompt(false); }}
+              className="btn-secondary w-full mt-4"
+            >
+              Close
+            </button>
           </div>
         </div>
       )}
