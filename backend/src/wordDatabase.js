@@ -1502,6 +1502,38 @@ const wordPairs = [
   { civ: "Check-Up", und: "Examination", cat: "Health & Body" },
   { civ: "X-Ray", und: "Scan", cat: "Health & Body" },
   { civ: "Blood Test", und: "Urine Test", cat: "Health & Body" },
+
+  // ============================================
+  // FRIENDS
+  // ============================================
+  { civ: "Cam", und: "Clam", cat: "Friends" },
+  { civ: "Cam", und: "Ellio", cat: "Friends" },
+  { civ: "Cam", und: "Dan", cat: "Friends" },
+  { civ: "Cam", und: "Matt", cat: "Friends" },
+  { civ: "Cam", und: "Frab", cat: "Friends" },
+  { civ: "Cam", und: "Sam", cat: "Friends" },
+  { civ: "Cam", und: "Max", cat: "Friends" },
+  { civ: "Clam", und: "Ellio", cat: "Friends" },
+  { civ: "Clam", und: "Dan", cat: "Friends" },
+  { civ: "Clam", und: "Matt", cat: "Friends" },
+  { civ: "Clam", und: "Frab", cat: "Friends" },
+  { civ: "Clam", und: "Sam", cat: "Friends" },
+  { civ: "Clam", und: "Max", cat: "Friends" },
+  { civ: "Ellio", und: "Dan", cat: "Friends" },
+  { civ: "Ellio", und: "Matt", cat: "Friends" },
+  { civ: "Ellio", und: "Frab", cat: "Friends" },
+  { civ: "Ellio", und: "Sam", cat: "Friends" },
+  { civ: "Ellio", und: "Max", cat: "Friends" },
+  { civ: "Dan", und: "Matt", cat: "Friends" },
+  { civ: "Dan", und: "Frab", cat: "Friends" },
+  { civ: "Dan", und: "Sam", cat: "Friends" },
+  { civ: "Dan", und: "Max", cat: "Friends" },
+  { civ: "Matt", und: "Frab", cat: "Friends" },
+  { civ: "Matt", und: "Sam", cat: "Friends" },
+  { civ: "Matt", und: "Max", cat: "Friends" },
+  { civ: "Frab", und: "Sam", cat: "Friends" },
+  { civ: "Frab", und: "Max", cat: "Friends" },
+  { civ: "Sam", und: "Max", cat: "Friends" },
 ];
 
 // Get all unique categories
