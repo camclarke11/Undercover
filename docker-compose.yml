@@ -1,23 +1,8 @@
 services:
-  backend:
+  app:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
     ports:
-      - "3001:3001"
-    environment:
-      - NODE_ENV=production
-      - PORT=3001
-    restart: unless-stopped
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        - VITE_BACKEND_URL=http://localhost:3001
-    ports:
-      - "8080:80"
-    depends_on:
-      - backend
+      - "80:3001"  # Maps port 80 on host to 3001 in container
     restart: unless-stopped
