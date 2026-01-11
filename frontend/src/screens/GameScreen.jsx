@@ -14,7 +14,7 @@ const getRandomWalterWhiteGif = () => {
 };
 
 export default function GameScreen() {
-  const { room, eliminatePlayer, skipElimination, mrWhiteGuess, eliminationResult, clearEliminationResult, undoAction } = useSocket();
+  const { room, eliminatePlayer, revengerPickVictim, skipElimination, mrWhiteGuess, eliminationResult, clearEliminationResult, undoAction } = useSocket();
   const [guess, setGuess] = useState('');
   const [loading, setLoading] = useState(false);
   const [showResult, setShowResult] = useState(false);
@@ -26,6 +26,10 @@ export default function GameScreen() {
   const mrWhitePlayer = room?.mrWhiteGuesserId 
     ? room.players.find(p => p.id === room.mrWhiteGuesserId)
     : null;
+  
+  // Mr. Meme - current player who must use gestures
+  const mrMemePlayerId = room?.specialRoles?.mrMeme?.currentMimeId;
+  const mrMemePlayer = mrMemePlayerId ? room.players.find(p => p.id === mrMemePlayerId) : null;
 
   useEffect(() => {
     if (eliminationResult) {
@@ -143,8 +147,24 @@ export default function GameScreen() {
     );
   }
 
+  // Helper to get eliminated player(s) display
+  const getEliminatedDisplay = () => {
+    const eliminated = eliminationResult?.eliminated;
+    if (!eliminated) return null;
+    
+    // Check if it's an array (multiple eliminations like Lovers)
+    if (Array.isArray(eliminated)) {
+      return eliminated;
+    }
+    return [eliminated];
+  };
+
   // Elimination Result Modal
   if (showResult && eliminationResult) {
+    const eliminatedPlayers = getEliminatedDisplay();
+    const hasLoversLinked = eliminatedPlayers?.some(p => p.loversLinked);
+    const hasRevengerVictim = eliminatedPlayers?.some(p => p.revengerVictim);
+    
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6">
         <div className="card text-center w-full max-w-sm animate-fade-in">
@@ -155,6 +175,29 @@ export default function GameScreen() {
               </div>
               <h2 className="text-2xl font-bold mb-2">Tie Vote!</h2>
               <p className="text-gray-400 mb-6">No one was eliminated. Moving to next round.</p>
+            </>
+          ) : eliminationResult.revengerChance ? (
+            <>
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500 bg-opacity-20 flex items-center justify-center">
+                <span className="text-3xl">⚔️</span>
+              </div>
+              <h2 className="text-2xl font-bold mb-2">{eliminationResult.revengerName} is out!</h2>
+              <p className="text-red-400 mb-2">They were The Revenger!</p>
+              <p className="text-gray-400 mb-6">Pass the phone to them - they get to take someone down with them...</p>
+            </>
+          ) : eliminationResult.revengerVictimChosen ? (
+            <>
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500 bg-opacity-20 flex items-center justify-center">
+                <span className="text-3xl">⚔️</span>
+              </div>
+              <h2 className="text-2xl font-bold mb-2">Revenge Complete!</h2>
+              {eliminatedPlayers?.map((p, idx) => (
+                <p key={idx} className={`mb-1 ${p.role === 'Civilian' ? 'text-game-success' : 'text-game-highlight'}`}>
+                  {p.name} ({p.role === 'Civilian' ? 'Civilian' : p.role})
+                  {p.loversLinked && <span className="text-pink-400"> 💕 (Lover)</span>}
+                </p>
+              ))}
+              <p className="text-gray-400 mb-6 mt-2">The game continues...</p>
             </>
           ) : eliminationResult.mrWhiteChance ? (
             <>
@@ -169,7 +212,7 @@ export default function GameScreen() {
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-game-warning bg-opacity-20 flex items-center justify-center">
                 <span className="text-3xl">🎭</span>
               </div>
-              <h2 className="text-2xl font-bold mb-2">{eliminationResult.eliminated?.name} is out!</h2>
+              <h2 className="text-2xl font-bold mb-2">{eliminatedPlayers?.[0]?.name} is out!</h2>
               <p className="text-game-warning mb-2">They were Mr. White!</p>
               <p className="text-gray-400 mb-6">Pass the phone to them for their final guess...</p>
             </>
@@ -185,16 +228,35 @@ export default function GameScreen() {
           ) : (
             <>
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-game-highlight bg-opacity-20 flex items-center justify-center">
-                <span className="text-3xl">💀</span>
+                <span className="text-3xl">{hasLoversLinked ? '💕' : '💀'}</span>
               </div>
-              <h2 className="text-2xl font-bold mb-2">{eliminationResult.eliminated?.name} is out!</h2>
-              <p className={`mb-6 ${eliminationResult.eliminated?.role === 'Civilian' ? 'text-game-success' : 'text-game-highlight'}`}>
-                They were {eliminationResult.eliminated?.role === 'Civilian' ? 'a Civilian' : eliminationResult.eliminated?.role}!
-              </p>
+              {eliminatedPlayers?.length === 1 ? (
+                <>
+                  <h2 className="text-2xl font-bold mb-2">{eliminatedPlayers[0].name} is out!</h2>
+                  <p className={`mb-6 ${eliminatedPlayers[0].role === 'Civilian' ? 'text-game-success' : 'text-game-highlight'}`}>
+                    They were {eliminatedPlayers[0].role === 'Civilian' ? 'a Civilian' : eliminatedPlayers[0].role}!
+                    {eliminatedPlayers[0].specialRole && <span className="text-gray-400"> ({eliminatedPlayers[0].specialRole})</span>}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h2 className="text-2xl font-bold mb-2">
+                    {hasLoversLinked ? 'The Lovers Fall Together!' : 'Multiple Eliminations!'}
+                  </h2>
+                  {eliminatedPlayers?.map((p, idx) => (
+                    <p key={idx} className={`mb-1 ${p.role === 'Civilian' ? 'text-game-success' : 'text-game-highlight'}`}>
+                      {p.name} - {p.role === 'Civilian' ? 'Civilian' : p.role}
+                      {p.loversLinked && <span className="text-pink-400"> 💕</span>}
+                    </p>
+                  ))}
+                  <div className="mb-4" />
+                </>
+              )}
             </>
           )}
           <button onClick={handleContinue} className="btn-primary">
-            {eliminationResult.mrWhiteChance ? 'Continue to Guess' : 'Next Round'}
+            {eliminationResult.mrWhiteChance ? 'Continue to Guess' : 
+             eliminationResult.revengerChance ? 'Continue to Revenge' : 'Next Round'}
           </button>
         </div>
       </div>
@@ -253,6 +315,63 @@ export default function GameScreen() {
     );
   }
 
+  // Revenger Revenge Phase
+  if (room?.status === 'REVENGER_REVENGE') {
+    const handleRevengerPick = async (victimId) => {
+      if (loading) return;
+      vibrate(HAPTIC.HEAVY);
+      setLoading(true);
+      try {
+        await revengerPickVictim(victimId);
+      } catch (err) {
+        console.error('Failed to pick victim:', err);
+        vibrate(HAPTIC.ERROR);
+      }
+      setLoading(false);
+    };
+
+    return (
+      <div className="min-h-screen flex flex-col p-6 safe-bottom">
+        <div className="card text-center mb-6">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500 bg-opacity-20 flex items-center justify-center">
+            <span className="text-3xl">⚔️</span>
+          </div>
+          <h2 className="text-xl font-bold mb-2">The Revenger's Revenge!</h2>
+          <p className="text-red-400 text-lg mb-2">Choose your victim wisely...</p>
+          <p className="text-gray-400 text-sm">
+            Pick one player to eliminate with you!
+          </p>
+        </div>
+
+        <div className="card mb-6 bg-game-accent">
+          <p className="text-sm text-gray-300 text-center">
+            🔒 Only the eliminated Revenger should see this screen
+          </p>
+        </div>
+
+        <div className="card flex-1 mb-4">
+          <p className="text-sm text-gray-400 mb-3 text-center">⚔️ Who do you take down?</p>
+          <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+            {alivePlayers.map((player) => (
+              <button
+                key={player.id}
+                onClick={() => handleRevengerPick(player.id)}
+                disabled={loading}
+                className="flex flex-col items-center gap-2 p-3 bg-game-accent rounded-xl border border-transparent hover:border-red-500 transition-all"
+              >
+                <div className="w-10 h-10 rounded-full bg-red-500 bg-opacity-30 flex items-center justify-center text-lg font-bold">
+                  {player.name.charAt(0).toUpperCase()}
+                </div>
+                <span className="font-medium text-sm text-white truncate w-full text-center">{player.name}</span>
+                <span className="text-red-400 text-xs">Take Down</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Main Game Screen (PLAYING status)
   return (
     <div className="min-h-screen flex flex-col p-6 safe-bottom">
@@ -276,24 +395,48 @@ export default function GameScreen() {
         </div>
       </div>
 
+      {/* Mr. Meme Indicator */}
+      {mrMemePlayer && (
+        <div className="card mb-4 border-2 border-purple-500 bg-purple-500 bg-opacity-10">
+          <div className="flex items-center justify-center gap-3">
+            <span className="text-2xl">🙊</span>
+            <div className="text-center">
+              <p className="text-purple-400 font-bold">{mrMemePlayer.name} is Mr. Meme!</p>
+              <p className="text-xs text-gray-400">They must describe with gestures only this round</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Speaking Order */}
       <div className="card mb-4">
         <p className="text-sm text-gray-400 mb-3 text-center">🗣️ Speaking Order</p>
         <div className="space-y-2">
-          {speakingOrder.map((player, idx) => (
-            <div 
-              key={player.id}
-              className="flex items-center gap-3 py-2 px-3 bg-game-accent rounded-lg"
-            >
-              <div className="w-7 h-7 rounded-full bg-game-highlight flex items-center justify-center text-sm font-bold">
-                {idx + 1}
+          {speakingOrder.map((player, idx) => {
+            const isMrMeme = player.id === mrMemePlayerId;
+            return (
+              <div 
+                key={player.id}
+                className={`flex items-center gap-3 py-2 px-3 rounded-lg ${
+                  isMrMeme ? 'bg-purple-500 bg-opacity-20 border border-purple-500' : 'bg-game-accent'
+                }`}
+              >
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold ${
+                  isMrMeme ? 'bg-purple-500' : 'bg-game-highlight'
+                }`}>
+                  {isMrMeme ? '🙊' : idx + 1}
+                </div>
+                <span className="font-medium text-white">{player.name}</span>
+                {isMrMeme && (
+                  <span className="text-xs text-purple-400 ml-auto">Gestures only!</span>
+                )}
               </div>
-              <span className="font-medium text-white">{player.name}</span>
-            </div>
-          ))}
+            );
+          })}
         </div>
         <p className="text-xs text-gray-500 text-center mt-3">
           Each player says ONE word about their secret word
+          {mrMemePlayer && <span className="text-purple-400"> (except Mr. Meme!)</span>}
         </p>
       </div>
 

@@ -13,6 +13,15 @@ const getRandomWalterWhiteGif = () => {
   return WALTER_WHITE_GIFS[Math.floor(Math.random() * WALTER_WHITE_GIFS.length)];
 };
 
+// Special role display info
+const SPECIAL_ROLE_INFO = {
+  'Joy Fool': { emoji: '🃏', color: 'text-yellow-400', tip: 'Win 4 extra points if you\'re voted out first!' },
+  'Lover': { emoji: '💕', color: 'text-pink-400', tip: 'If you\'re eliminated, your partner is too!' },
+  'Revenger': { emoji: '⚔️', color: 'text-red-400', tip: 'If eliminated, you can take someone down with you!' },
+  'Duelist': { emoji: '🎯', color: 'text-orange-400', tip: 'First duelist out loses 2pts, winner gets 2pts!' },
+  'Mr. Meme': { emoji: '🙊', color: 'text-purple-400', tip: 'Each round, one player must use gestures!' }
+};
+
 export default function RoleReveal({ onReady }) {
   const { room, revealRole } = useSocket();
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
@@ -229,6 +238,28 @@ export default function RoleReveal({ onReady }) {
                 : currentPlayer?.role}
             </h2>
           </div>
+
+          {/* Special Role Display */}
+          {currentPlayer?.specialRole && SPECIAL_ROLE_INFO[currentPlayer.specialRole] && (
+            <div className="card mb-4 border-2 border-dashed border-gray-600">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <span className="text-2xl">{SPECIAL_ROLE_INFO[currentPlayer.specialRole].emoji}</span>
+                <span className={`font-bold ${SPECIAL_ROLE_INFO[currentPlayer.specialRole].color}`}>
+                  {currentPlayer.specialRole === 'Lover' ? 'You are a Lover!' :
+                   currentPlayer.specialRole === 'Duelist' ? 'You are a Duelist!' :
+                   `You are the ${currentPlayer.specialRole}!`}
+                </span>
+              </div>
+              {currentPlayer.specialRolePartner && (
+                <p className="text-sm text-center mb-2">
+                  Your partner: <span className="font-bold text-white">{currentPlayer.specialRolePartner}</span>
+                </p>
+              )}
+              <p className="text-xs text-gray-400 text-center">
+                {SPECIAL_ROLE_INFO[currentPlayer.specialRole].tip}
+              </p>
+            </div>
+          )}
 
           <div className="card mb-4">
             <p className="text-sm text-gray-400 mb-1">Your Word</p>

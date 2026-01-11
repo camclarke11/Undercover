@@ -1,16 +1,28 @@
 import React, { useState } from 'react';
 import { useSocket } from '../contexts/SocketContext';
 
+// Special role definitions with metadata
+const SPECIAL_ROLES = [
+  { id: 'Joy Fool', name: 'Joy Fool', emoji: '🃏', minPlayers: 3, description: '+4 points if voted out first' },
+  { id: 'Lover', name: 'The Lovers', emoji: '💕', minPlayers: 5, description: 'If one is eliminated, both are' },
+  { id: 'Revenger', name: 'The Revenger', emoji: '⚔️', minPlayers: 5, description: 'Takes someone down when eliminated' },
+  { id: 'Duelist', name: 'The Duelists', emoji: '🎯', minPlayers: 5, description: 'First out loses 2pts, other wins 2pts' },
+  { id: 'Mr. Meme', name: 'Mr. Meme', emoji: '🙊', minPlayers: 3, description: 'One player uses gestures each round' }
+];
+
 export default function Lobby() {
   const { room, addPlayer, removePlayer, updateSettings, startGame, leaveRoom, error, clearError, categories, categoriesLoading } = useSocket();
   const [newPlayerName, setNewPlayerName] = useState('');
   const [loading, setLoading] = useState(false);
   const [addingPlayer, setAddingPlayer] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
+  const [showSpecialRoles, setShowSpecialRoles] = useState(false);
 
-  const settings = room?.settings || { undercoverCount: 1, includeMrWhite: false, selectedCategories: [] };
+  const settings = room?.settings || { undercoverCount: 1, includeMrWhite: false, selectedCategories: [], enabledSpecialRoles: [], specialRoleChances: {} };
   const playerCount = room?.players?.length || 0;
   const selectedCategories = settings.selectedCategories || [];
+  const enabledSpecialRoles = settings.enabledSpecialRoles || [];
+  const specialRoleChances = settings.specialRoleChances || {};
   const allCategoryNames = categories.map(c => c.name);
 
   const handleAddPlayer = async (e) => {
@@ -81,6 +93,29 @@ export default function Lobby() {
       await updateSettings({ selectedCategories: [] });
     } catch (err) {
       console.error('Failed to update categories:', err);
+    }
+  };
+
+  const handleToggleSpecialRole = async (roleId) => {
+    const isEnabled = enabledSpecialRoles.includes(roleId);
+    const newRoles = isEnabled
+      ? enabledSpecialRoles.filter(r => r !== roleId)
+      : [...enabledSpecialRoles, roleId];
+    
+    try {
+      await updateSettings({ enabledSpecialRoles: newRoles });
+    } catch (err) {
+      console.error('Failed to update special roles:', err);
+    }
+  };
+
+  const handleUpdateRoleChance = async (roleId, chance) => {
+    try {
+      await updateSettings({ 
+        specialRoleChances: { [roleId]: chance }
+      });
+    } catch (err) {
+      console.error('Failed to update role chance:', err);
     }
   };
 
@@ -289,6 +324,126 @@ export default function Lobby() {
             />
           </button>
         </div>
+      </div>
+
+      {/* Special Roles Selection */}
+      <div className="card mb-4">
+        <button 
+          onClick={() => setShowSpecialRoles(!showSpecialRoles)}
+          className="w-full flex items-center justify-between"
+        >
+          <div>
+            <h2 className="font-semibold text-left">Special Roles</h2>
+            <p className="text-xs text-gray-400">
+              {enabledSpecialRoles.length === 0
+                ? 'No special roles enabled'
+                : `${enabledSpecialRoles.length} role${enabledSpecialRoles.length !== 1 ? 's' : ''} enabled`}
+            </p>
+          </div>
+          <svg 
+            className={`w-5 h-5 text-gray-400 transition-transform ${showSpecialRoles ? 'rotate-180' : ''}`} 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {showSpecialRoles && (
+          <div className="mt-4 space-y-2">
+            {SPECIAL_ROLES.map((role) => {
+              const isEnabled = enabledSpecialRoles.includes(role.id);
+              const hasEnoughPlayers = playerCount >= role.minPlayers;
+              const isDisabled = !hasEnoughPlayers;
+              const chance = specialRoleChances[role.id] ?? 100;
+              
+              return (
+                <div key={role.id} className="space-y-2">
+                  <button
+                    onClick={() => !isDisabled && handleToggleSpecialRole(role.id)}
+                    disabled={isDisabled}
+                    className={`w-full p-3 rounded-xl text-left transition-all ${
+                      isEnabled && !isDisabled
+                        ? 'bg-game-success bg-opacity-20 border-2 border-game-success' 
+                        : isDisabled
+                          ? 'bg-game-accent border-2 border-transparent opacity-50 cursor-not-allowed'
+                          : 'bg-game-accent border-2 border-transparent hover:border-gray-600'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl ${
+                        isEnabled && !isDisabled ? 'bg-game-success bg-opacity-30' : 'bg-gray-700'
+                      }`}>
+                        {role.emoji}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className={`font-medium ${isEnabled && !isDisabled ? 'text-white' : 'text-gray-300'}`}>
+                            {role.name}
+                          </p>
+                          {role.minPlayers > 3 && (
+                            <span className={`text-xs px-1.5 py-0.5 rounded ${
+                              hasEnoughPlayers ? 'bg-gray-700 text-gray-400' : 'bg-game-highlight bg-opacity-30 text-game-highlight'
+                            }`}>
+                              {role.minPlayers}+ players
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500">{role.description}</p>
+                      </div>
+                      <div className={`w-6 h-6 rounded flex items-center justify-center ${
+                        isEnabled && !isDisabled ? 'bg-game-success text-black' : 'bg-gray-600'
+                      }`}>
+                        {isEnabled && !isDisabled && (
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                  
+                  {/* Chance slider - only shown when role is enabled */}
+                  {isEnabled && !isDisabled && (
+                    <div 
+                      className="ml-4 pl-4 border-l-2 border-gray-700 py-2"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs text-gray-400">Chance per game</span>
+                        <span className={`text-xs font-bold ${
+                          chance === 100 ? 'text-game-success' : 
+                          chance === 0 ? 'text-gray-500' : 
+                          'text-game-warning'
+                        }`}>
+                          {chance}%
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="10"
+                        value={chance}
+                        onChange={(e) => handleUpdateRoleChance(role.id, parseInt(e.target.value))}
+                        className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-game-success"
+                      />
+                      <div className="flex justify-between text-xs text-gray-600 mt-1">
+                        <span>Never</span>
+                        <span>Always</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            
+            <p className="text-xs text-gray-500 text-center pt-2">
+              Special roles are assigned randomly based on their chance %
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Category Selection */}

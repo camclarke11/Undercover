@@ -250,6 +250,9 @@ io.on('connection', (socket) => {
         room: gameManager.getPublicRoomState(result.room),
         eliminated: result.eliminated,
         mrWhiteChance: result.mrWhiteChance,
+        revengerChance: result.revengerChance,
+        revengerId: result.revengerId,
+        revengerName: result.revengerName,
         gameOver: result.gameOver,
         winners: result.winners,
         winReason: result.winReason,
@@ -260,6 +263,32 @@ io.on('connection', (socket) => {
     } catch (error) {
       console.error('Error eliminating player:', error);
       callback({ success: false, error: 'Failed to eliminate player' });
+    }
+  });
+
+  socket.on('REVENGER_PICK_VICTIM', ({ roomCode, victimId }, callback) => {
+    try {
+      const result = gameManager.revengerPickVictim(roomCode, victimId);
+      if (!result.success) {
+        callback(result);
+        return;
+      }
+      console.log(`Revenger picked victim in room ${roomCode}`);
+      callback({
+        success: true,
+        room: gameManager.getPublicRoomState(result.room),
+        eliminated: result.eliminated,
+        mrWhiteChance: result.mrWhiteChance,
+        gameOver: result.gameOver,
+        winners: result.winners,
+        winReason: result.winReason,
+        continueGame: result.continueGame,
+        scoreResults: result.scoreResults,
+        leaderboard: result.leaderboard
+      });
+    } catch (error) {
+      console.error('Error picking revenger victim:', error);
+      callback({ success: false, error: 'Failed to pick victim' });
     }
   });
 

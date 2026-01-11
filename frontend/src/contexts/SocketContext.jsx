@@ -206,6 +206,51 @@ export function SocketProvider({ children }) {
             setEliminationResult({
               eliminated: response.eliminated,
               mrWhiteChance: response.mrWhiteChance,
+              revengerChance: response.revengerChance,
+              revengerId: response.revengerId,
+              revengerName: response.revengerName,
+              continueGame: response.continueGame
+            });
+          }
+          
+          resolve(response);
+        } else {
+          setError(response.error);
+          reject(new Error(response.error));
+        }
+      });
+    });
+  }, [socket, room]);
+
+  const revengerPickVictim = useCallback((victimId) => {
+    return new Promise((resolve, reject) => {
+      if (!socket || !room) {
+        reject(new Error('Not in a room'));
+        return;
+      }
+      socket.emit('REVENGER_PICK_VICTIM', { roomCode: room.code, victimId }, (response) => {
+        if (response.success) {
+          setRoom(response.room);
+          
+          if (response.gameOver) {
+            setGameResult({
+              eliminated: response.eliminated,
+              winners: response.winners,
+              winReason: response.winReason,
+              wordPair: response.room?.wordPair,
+              scoreResults: response.scoreResults,
+              leaderboard: response.leaderboard
+            });
+          } else if (response.mrWhiteChance) {
+            setEliminationResult({
+              eliminated: response.eliminated,
+              mrWhiteChance: true,
+              continueGame: false
+            });
+          } else {
+            setEliminationResult({
+              eliminated: response.eliminated,
+              revengerVictimChosen: true,
               continueGame: response.continueGame
             });
           }
@@ -367,6 +412,7 @@ export function SocketProvider({ children }) {
     startGame,
     revealRole,
     eliminatePlayer,
+    revengerPickVictim,
     skipElimination,
     mrWhiteGuess,
     undoAction,
