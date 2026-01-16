@@ -324,6 +324,32 @@ export default function Lobby() {
             />
           </button>
         </div>
+
+        {/* Strict Win Condition Toggle */}
+        <div className="flex items-center justify-between mt-4">
+          <div>
+            <p className="font-medium text-white">Minority Rules</p>
+            <p className="text-xs text-gray-400">Bad guys must STRICTLY outnumber civilians to win</p>
+          </div>
+          <button
+            onClick={async () => {
+              try {
+                await updateSettings({ badGuysMustOutnumber: !settings.badGuysMustOutnumber });
+              } catch (err) {
+                console.error('Failed to update settings:', err);
+              }
+            }}
+            className={`w-14 h-8 rounded-full transition-colors relative ${
+              settings.badGuysMustOutnumber ? 'bg-game-success' : 'bg-game-accent'
+            }`}
+          >
+            <div
+              className={`absolute top-1 w-6 h-6 rounded-full bg-white transition-all ${
+                settings.badGuysMustOutnumber ? 'left-7' : 'left-1'
+              }`}
+            />
+          </button>
+        </div>
       </div>
 
       {/* Special Roles Selection */}

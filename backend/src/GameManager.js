@@ -84,6 +84,7 @@ class GameManager {
         includeMrWhite: false,
         hideRoleLabels: false,
         preventMrWhiteFirst: false,
+        badGuysMustOutnumber: false, // If true, bad guys must strictly outnumber civilians to win ( > vs >= )
         selectedCategories: wordStorage.getAllCategories().map(c => c.name),
         // Special roles settings
         enabledSpecialRoles: [], // Array of enabled special role types
@@ -191,6 +192,10 @@ class GameManager {
 
     if (settings.preventMrWhiteFirst !== undefined) {
       room.settings.preventMrWhiteFirst = Boolean(settings.preventMrWhiteFirst);
+    }
+
+    if (settings.badGuysMustOutnumber !== undefined) {
+      room.settings.badGuysMustOutnumber = Boolean(settings.badGuysMustOutnumber);
     }
 
     if (settings.selectedCategories !== undefined) {
@@ -891,17 +896,29 @@ class GameManager {
     const aliveUndercover = alivePlayers.filter(p => p.role === ROLE.UNDERCOVER);
     const aliveMrWhite = alivePlayers.filter(p => p.role === ROLE.MR_WHITE);
 
-    if (aliveUndercover.length + aliveMrWhite.length >= aliveCivilians.length) {
+    const badGuysCount = aliveUndercover.length + aliveMrWhite.length;
+    const civiliansCount = aliveCivilians.length;
+    
+    // Win condition for bad guys:
+    // Default: Bad Guys >= Civilians
+    // Strict Mode: Bad Guys > Civilians
+    const badGuysWin = room.settings.badGuysMustOutnumber 
+      ? badGuysCount > civiliansCount
+      : badGuysCount >= civiliansCount;
+
+    if (badGuysWin) {
       const winners = [];
       if (aliveUndercover.length > 0) winners.push('Undercover');
       if (aliveMrWhite.length > 0) winners.push('Mr. White');
       return {
         winners,
-        reason: 'The bad guys outnumber the civilians!'
+        reason: room.settings.badGuysMustOutnumber 
+          ? 'The bad guys outnumber the civilians!'
+          : 'The bad guys have equaled or outnumbered the civilians!'
       };
     }
 
-    if (aliveUndercover.length === 0 && aliveMrWhite.length === 0) {
+    if (badGuysCount === 0) {
       return {
         winners: ['Civilians'],
         reason: 'All undercover agents and Mr. White have been eliminated!'
