@@ -1,20 +1,35 @@
 services:
-  undercover-app:
-    container_name: undercover
+  undercover-backend:
+    container_name: undercover-backend
     build:
       context: .
       dockerfile: Dockerfile
     expose:
       - "3001"
     restart: unless-stopped
+    networks:
+      - shared-network
 
-  nginx:
+  undercover-frontend:
+    container_name: undercover-frontend
     image: nginx:alpine
-    ports:
-      - "24582:80"
-      - "24583:443"
+    networks:
+      - shared-network
     volumes:
       - ./nginx-ssl.conf:/etc/nginx/conf.d/default.conf
-      - ./certs:/etc/nginx/certs
     depends_on:
-      - undercover-app
+      - undercover-backend
+    labels:
+      - "traefik.enable=true"
+
+      # Router
+      - "traefik.http.routers.undercover.rule=Host(`undercover.krask.dev`)"
+      - "traefik.http.routers.undercover.entrypoints=websecure"
+      - "traefik.http.routers.undercover.tls.certresolver=le"
+
+      # Service (IMPORTANT: match container port)
+      - "traefik.http.services.undercover.loadbalancer.server.port=80"
+
+networks:
+  shared-network:
+    external: true
